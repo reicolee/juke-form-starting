@@ -26498,6 +26498,7 @@
 	    _this.prev = _this.prev.bind(_this);
 	    _this.selectAlbum = _this.selectAlbum.bind(_this);
 	    _this.selectArtist = _this.selectArtist.bind(_this);
+	    _this.addPlayList = _this.addPlayList.bind(_this);
 	    return _this;
 	  }
 	
@@ -26506,7 +26507,7 @@
 	    value: function componentDidMount() {
 	      var _this2 = this;
 	
-	      Promise.all([_axios2.default.get('/api/albums/'), _axios2.default.get('/api/artists/')]).then(function (res) {
+	      Promise.all([_axios2.default.get('/api/albums/'), _axios2.default.get('/api/artists/'), _axios2.default.get('/api/playlists')]).then(function (res) {
 	        return res.map(function (r) {
 	          return r.data;
 	        });
@@ -26522,11 +26523,25 @@
 	      });
 	    }
 	  }, {
+	    key: 'addPlayList',
+	    value: function addPlayList(playlistName) {
+	      var _this3 = this;
+	
+	      _axios2.default.post('/api/playlists', { name: playlistName }).then(function (res) {
+	        return res.data;
+	      }).then(function (playlist) {
+	        _this3.setState({
+	          playlists: [].concat(_toConsumableArray(_this3.state.playlists), [playlist])
+	        });
+	      });
+	    }
+	  }, {
 	    key: 'onLoad',
-	    value: function onLoad(albums, artists) {
+	    value: function onLoad(albums, artists, playlists) {
 	      this.setState({
 	        albums: (0, _utils.convertAlbums)(albums),
-	        artists: artists
+	        artists: artists,
+	        playlists: playlists
 	      });
 	    }
 	  }, {
@@ -26586,12 +26601,12 @@
 	  }, {
 	    key: 'selectAlbum',
 	    value: function selectAlbum(albumId) {
-	      var _this3 = this;
+	      var _this4 = this;
 	
 	      _axios2.default.get('/api/albums/' + albumId).then(function (res) {
 	        return res.data;
 	      }).then(function (album) {
-	        return _this3.setState({
+	        return _this4.setState({
 	          selectedAlbum: (0, _utils.convertAlbum)(album)
 	        });
 	      });
@@ -26599,14 +26614,14 @@
 	  }, {
 	    key: 'selectArtist',
 	    value: function selectArtist(artistId) {
-	      var _this4 = this;
+	      var _this5 = this;
 	
 	      Promise.all([_axios2.default.get('/api/artists/' + artistId), _axios2.default.get('/api/artists/' + artistId + '/albums'), _axios2.default.get('/api/artists/' + artistId + '/songs')]).then(function (res) {
 	        return res.map(function (r) {
 	          return r.data;
 	        });
 	      }).then(function (data) {
-	        return _this4.onLoadArtist.apply(_this4, _toConsumableArray(data));
+	        return _this5.onLoadArtist.apply(_this5, _toConsumableArray(data));
 	      });
 	    }
 	  }, {
@@ -26627,7 +26642,8 @@
 	        toggleOne: this.toggleOne,
 	        toggle: this.toggle,
 	        selectAlbum: this.selectAlbum,
-	        selectArtist: this.selectArtist
+	        selectArtist: this.selectArtist,
+	        addPlayList: this.addPlayList
 	      });
 	
 	      return _react2.default.createElement(
@@ -26636,7 +26652,10 @@
 	        _react2.default.createElement(
 	          'div',
 	          { className: 'col-xs-2' },
-	          _react2.default.createElement(_Sidebar2.default, null)
+	          _react2.default.createElement(_Sidebar2.default, {
+	            addPlaylist: this.addPlaylist,
+	            playlists: this.state.playlists
+	          })
 	        ),
 	        _react2.default.createElement(
 	          'div',
@@ -28167,7 +28186,8 @@
 	  currentSong: {},
 	  currentSongList: [],
 	  isPlaying: false,
-	  progress: 0
+	  progress: 0,
+	  playlists: []
 	};
 	
 	exports.default = initialState;
@@ -28450,6 +28470,7 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var Sidebar = function Sidebar(props) {
+	  var playlists = props.playlists;
 	
 	  return _react2.default.createElement(
 	    'sidebar',
@@ -28494,10 +28515,25 @@
 	        'h4',
 	        null,
 	        _react2.default.createElement(
+	          'ul',
+	          { className: 'list-unstyled' },
+	          playlists.map(function (playlist) {
+	            return _react2.default.createElement(
+	              'li',
+	              { key: playlist.id, className: 'playlist-item menu-item' },
+	              _react2.default.createElement(
+	                _reactRouter.Link,
+	                { to: 'FILL_ME_IN' },
+	                playlist.name
+	              )
+	            );
+	          })
+	        ),
+	        _react2.default.createElement(
 	          _reactRouter.Link,
 	          { className: 'btn btn-primary btn-block', to: '/newplaylist' },
 	          _react2.default.createElement('span', { className: 'glyphicon glyphicon-plus' }),
-	          ' PLAYLIST }'
+	          ' PLAYLIST'
 	        )
 	      )
 	    )
@@ -28896,6 +28932,7 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var NewPlaylist = function NewPlaylist(props) {
+	
 	  return _react2.default.createElement(
 	    'div',
 	    { className: 'well' },
@@ -28932,8 +28969,18 @@
 	            { className: 'col-xs-10 col-xs-offset-2' },
 	            _react2.default.createElement(
 	              'button',
-	              { type: 'submit', className: 'btn btn-success' },
+	              { type: 'submit', disabled: !props.inputValue || props.inputValue.length > 16, className: 'btn btn-success' },
 	              'Create Playlist'
+	            ),
+	            !props.inputValue.length && _react2.default.createElement(
+	              'div',
+	              { className: 'alert alert-warning' },
+	              'Please enter a name'
+	            ),
+	            props.inputValue.length > 16 && _react2.default.createElement(
+	              'div',
+	              { className: 'alert alert-warning' },
+	              'Name cannot be longer than 16 characters'
 	            )
 	          )
 	        )
@@ -28972,6 +29019,10 @@
 	
 	var _NewPlaylist2 = _interopRequireDefault(_NewPlaylist);
 	
+	var _axios = __webpack_require__(234);
+	
+	var _axios2 = _interopRequireDefault(_axios);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -29002,9 +29053,13 @@
 	  _createClass(PlaylistContainer, [{
 	    key: 'handleSubmit',
 	    value: function handleSubmit(evt) {
-	      console.log("A name was submitted: " + this.state.inputValue);
+	      // console.log("A name was submitted: " + this.state.inputValue)
 	      evt.preventDefault();
-	      this.setState({ inputValue: '' });
+	      // this.setState({inputValue: ''});
+	
+	      var addPlayList = this.props.addPlayList;
+	      console.log("~~~~~~", this.props.addPlayList);
+	      addPlayList(this.state.inputValue);
 	    }
 	  }, {
 	    key: 'handleChange',
@@ -29018,7 +29073,6 @@
 	      var filteredArtists = this.props.artists.filter(function (artist) {
 	        return artist.name.match(inputValue);
 	      });
-	
 	      return _react2.default.createElement(
 	        'div',
 	        null,

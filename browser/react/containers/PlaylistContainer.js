@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom';
 // import { Router, Route, hashHistory, IndexRedirect } from 'react-router';
 import Artists from '../components/Artists';
 import NewPlaylist from '../components/NewPlaylist';
+import axios from 'axios';
+
 
 
 export default class PlaylistContainer extends React.Component {
@@ -17,9 +19,13 @@ export default class PlaylistContainer extends React.Component {
     }
 
     handleSubmit (evt) {
-      console.log("A name was submitted: " + this.state.inputValue)
+      // console.log("A name was submitted: " + this.state.inputValue)
       evt.preventDefault();
-      this.setState({inputValue: ''});
+      // this.setState({inputValue: ''});
+
+      const addPlayList = this.props.addPlayList;
+      console.log("~~~~~~", this.props.addPlayList);
+      addPlayList(this.state.inputValue);
     }
 
     handleChange (evt) {
@@ -30,7 +36,6 @@ export default class PlaylistContainer extends React.Component {
       const inputValue = this.state.inputValue;
       const filteredArtists = this.props.artists.filter(artist =>
       artist.name.match(inputValue));
-
         return (
           <div>
             <NewPlaylist 
@@ -39,7 +44,7 @@ export default class PlaylistContainer extends React.Component {
               inputValue={this.state.inputValue}/>
           </div>
         )
-      }
+     }
   }
 
 
